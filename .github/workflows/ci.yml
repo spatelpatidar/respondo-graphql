@@ -100,7 +100,7 @@ jobs:
         run: bundle exec rspec --format progress
 
       - name: SonarQube scan
-        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0   # check the Marketplace for the latest version
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v6.0.0   # check the Marketplace for the latest version
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
