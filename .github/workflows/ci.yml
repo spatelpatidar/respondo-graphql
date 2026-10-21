@@ -42,26 +42,26 @@ jobs:
 
       - name: Run RSpec
         run: bundle exec rspec --format progress
-  test:
-    name: Specs (Ruby ${{ matrix.ruby }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true      # if one Ruby version fails, stop the rest
-      max-parallel: 1      # run one version at a time: 3.2 → 3.3 → 3.4
-      matrix:
-        # Dev dependencies (Rails 8.1) need Ruby 3.2+
-        ruby: ["3.2", "3.3", "3.4"]
-    steps:
-      - uses: actions/checkout@v4
+  # test:
+  #   name: Specs (Ruby ${{ matrix.ruby }})
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     fail-fast: true      # if one Ruby version fails, stop the rest
+  #     max-parallel: 1      # run one version at a time: 3.2 → 3.3 → 3.4
+  #     matrix:
+  #       # Dev dependencies (Rails 8.1) need Ruby 3.2+
+  #       ruby: ["3.2", "3.3", "3.4"]
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Set up Ruby ${{ matrix.ruby }}
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true
+  #     - name: Set up Ruby ${{ matrix.ruby }}
+  #       uses: ruby/setup-ruby@v1
+  #       with:
+  #         ruby-version: ${{ matrix.ruby }}
+  #         bundler-cache: true
 
-      - name: Run RSpec
-        run: bundle exec rspec --format progress
+  #     - name: Run RSpec
+  #       run: bundle exec rspec --format progress
 
   build:
     name: Build gem
