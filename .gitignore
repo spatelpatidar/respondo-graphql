@@ -3,4 +3,3 @@
 /pkg/
 *.gem
 /spec/examples.txt
-/spec/respondo_graphql_test.txt
