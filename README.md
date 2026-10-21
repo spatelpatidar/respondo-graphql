@@ -1,8 +1,13 @@
 <div align="center">
 
-# RespondoGraphql
+# Respondo Graphql 🎯
 
 **Consistent GraphQL-spec responses for Rails controllers — in one line.**
+
+[![Gem Version](https://badge.fury.io/rb/respondo-graphql.svg)](https://rubygems.org/gems/respondo-graphql)
+[![Downloads](https://img.shields.io/gem/dt/respondo-graphql.svg)](https://rubygems.org/gems/respondo-graphql)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache2.0-green.svg)](LICENSE)
+[![Ruby](https://img.shields.io/badge/Ruby-2.7%2B-red)](https://www.ruby-lang.org/)
 
 </div>
 

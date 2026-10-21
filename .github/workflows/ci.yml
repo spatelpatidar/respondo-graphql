@@ -17,6 +17,32 @@ permissions:
 
 jobs:
   test:
+    name: Specs (${{ matrix.os }}, Ruby ${{ matrix.ruby }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true      # if one combination fails, stop the rest
+      max-parallel: 1      # run in the order listed below
+      matrix:
+        include:
+          # All Ruby versions on Linux
+          - { os: ubuntu-latest,  ruby: "3.2" }
+          - { os: ubuntu-latest,  ruby: "3.3" }
+          - { os: ubuntu-latest,  ruby: "3.4" }
+          # Latest Ruby on Windows and macOS
+          - { os: windows-latest, ruby: "3.4" }
+          - { os: macos-latest,   ruby: "3.4" }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Ruby ${{ matrix.ruby }}
+        uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Run RSpec
+        run: bundle exec rspec --format progress
+  test:
     name: Specs (Ruby ${{ matrix.ruby }})
     runs-on: ubuntu-latest
     strategy:
@@ -45,7 +71,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
         with:
           ruby-version: "3.4"
           bundler-cache: true
@@ -65,7 +91,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
         with:
           ruby-version: "3.4"
           bundler-cache: true
@@ -74,7 +100,7 @@ jobs:
         run: bundle exec rspec --format progress
 
       - name: SonarQube scan
-        uses: SonarSource/sonarqube-scan-action@v6   # check the Marketplace for the latest version
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0   # check the Marketplace for the latest version
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
