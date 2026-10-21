@@ -18,8 +18,8 @@ Gem::Specification.new do |spec|
     Standalone gem — it does not depend on the respondo (JSON) gem.
   DESC
   spec.homepage      = "https://github.com/spatelpatidar/respondo-graphql"
-  spec.license       = "MIT"
-  spec.required_ruby_version = ">= 3.0.0"
+  spec.license       = "Apache-2.0"
+  spec.required_ruby_version = ">= 2.7.0"
 
   spec.metadata = {
     "homepage_uri"          => spec.homepage,
@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
     "rubygems_mfa_required" => "true"
   }
 
-  spec.files = Dir["lib/**/*.rb", "README.md", "LICENSE.txt", "CHANGELOG.md", "respondo-graphql.gemspec"]
+  spec.files = Dir["lib/**/*.rb", "README.md", "LICENSE", "CHANGELOG.md", "respondo-graphql.gemspec"]
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "railties",      "~> 8.1.3"

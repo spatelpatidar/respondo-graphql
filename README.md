@@ -140,4 +140,4 @@ bundle exec rspec
 
 ## License
 
-Released under the [MIT License](LICENSE.txt).
+Released under the [Apache License 2.0](LICENSE).
