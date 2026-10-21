@@ -17,33 +17,61 @@ permissions:
 
 jobs:
   test:
-    name: Specs (Ruby ${{ matrix.ruby }})
-    runs-on: ubuntu-latest
+    name: Specs (${{ matrix.os }}, Ruby ${{ matrix.ruby }})
+    runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true      # if one combination fails, stop the rest
+      max-parallel: 1      # run in the order listed below
       matrix:
-        # Dev dependencies (Rails 8.1) need Ruby 3.2+
-        ruby: ["3.2", "3.3", "3.4"]
+        include:
+          # All Ruby versions on Linux
+          - { os: ubuntu-latest,  ruby: "3.2" }
+          - { os: ubuntu-latest,  ruby: "3.3" }
+          - { os: ubuntu-latest,  ruby: "3.4" }
+          # Latest Ruby on Windows and macOS
+          - { os: windows-latest, ruby: "3.4" }
+          - { os: macos-latest,   ruby: "3.4" }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Ruby ${{ matrix.ruby }}
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
       - name: Run RSpec
         run: bundle exec rspec --format progress
+  # test:
+  #   name: Specs (Ruby ${{ matrix.ruby }})
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     fail-fast: true      # if one Ruby version fails, stop the rest
+  #     max-parallel: 1      # run one version at a time: 3.2 → 3.3 → 3.4
+  #     matrix:
+  #       # Dev dependencies (Rails 8.1) need Ruby 3.2+
+  #       ruby: ["3.2", "3.3", "3.4"]
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - name: Set up Ruby ${{ matrix.ruby }}
+  #       uses: ruby/setup-ruby@v1
+  #       with:
+  #         ruby-version: ${{ matrix.ruby }}
+  #         bundler-cache: true
+
+  #     - name: Run RSpec
+  #       run: bundle exec rspec --format progress
 
   build:
     name: Build gem
+    needs: test            # starts only after all three spec runs pass
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
         with:
           ruby-version: "3.4"
           bundler-cache: true
@@ -53,15 +81,40 @@ jobs:
           gem build respondo-graphql.gemspec
           ruby -rrubygems/package -e 'puts Gem::Package.new(Dir["*.gem"].first).contents.sort'
 
+  sonar:
+    name: SonarQube analysis
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - name: Run specs to produce coverage
+        run: bundle exec rspec --format progress
+
+      - name: SonarQube scan
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0   # check the Marketplace for the latest version
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: -Dsonar.qualitygate.wait=true
+
   # One stable check name to mark as "required" in the ruleset
   ci-passed:
     name: CI passed
     if: always()
-    needs: [test, build]
+    needs: [test, build, sonar]
     runs-on: ubuntu-latest
     steps:
-      - name: Fail if any job failed or was cancelled
+      - name: Fail if any job failed, was skipped or was cancelled
         run: |
-          if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.build.result }}" != "success" ]; then
+          if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.build.result }}" != "success" ] || [ "${{ needs.sonar.result }}" != "success" ]; then
             echo "One or more jobs did not succeed"; exit 1
           fi
