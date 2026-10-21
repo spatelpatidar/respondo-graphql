@@ -20,7 +20,8 @@ jobs:
     name: Specs (Ruby ${{ matrix.ruby }})
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true      # if one Ruby version fails, stop the rest
+      max-parallel: 1      # run one version at a time: 3.2 → 3.3 → 3.4
       matrix:
         # Dev dependencies (Rails 8.1) need Ruby 3.2+
         ruby: ["3.2", "3.3", "3.4"]
@@ -38,6 +39,7 @@ jobs:
 
   build:
     name: Build gem
+    needs: test            # starts only after all three spec runs pass
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -53,15 +55,40 @@ jobs:
           gem build respondo-graphql.gemspec
           ruby -rrubygems/package -e 'puts Gem::Package.new(Dir["*.gem"].first).contents.sort'
 
+  sonar:
+    name: SonarQube analysis
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - name: Run specs to produce coverage
+        run: bundle exec rspec --format progress
+
+      - name: SonarQube scan
+        uses: SonarSource/sonarqube-scan-action@v6   # check the Marketplace for the latest version
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: -Dsonar.qualitygate.wait=true
+
   # One stable check name to mark as "required" in the ruleset
   ci-passed:
     name: CI passed
     if: always()
-    needs: [test, build]
+    needs: [test, build, sonar]
     runs-on: ubuntu-latest
     steps:
-      - name: Fail if any job failed or was cancelled
+      - name: Fail if any job failed, was skipped or was cancelled
         run: |
-          if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.build.result }}" != "success" ]; then
+          if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.build.result }}" != "success" ] || [ "${{ needs.sonar.result }}" != "success" ]; then
             echo "One or more jobs did not succeed"; exit 1
           fi
