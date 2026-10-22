@@ -144,7 +144,7 @@ module RespondoGraphql
         request:    try(:request)
       ).build
 
-      render json: payload, status: respondo_graphql_status(status)
+      render json: payload, status: respondo_graphql_http_status(code, status)
     end
 
     # Render a failed GraphQL response: data is null, `errors` explains why.
@@ -166,12 +166,20 @@ module RespondoGraphql
         request: try(:request)
       ).build
 
-      render json: payload, status: respondo_graphql_status(status)
+      render json: payload, status: respondo_graphql_http_status(code, status)
     end
 
-    # With config.always_ok every response is sent as HTTP 200.
-    def respondo_graphql_status(status)
-      RespondoGraphql.config.always_ok ? :ok : status
+    # The HTTP status Rails should send.
+    #   * config.always_ok  -> every response is HTTP 200.
+    #   * otherwise a numeric code (every helper has one) is sent as-is. Rack has
+    #     renamed several status symbols between versions (:payload_too_large,
+    #     :unprocessable_entity, ...), so a number is the one form that works on
+    #     every Rack/Rails version.
+    #   * without a numeric code (a direct render_error call) the symbol is used.
+    def respondo_graphql_http_status(code, status)
+      return :ok if RespondoGraphql.config.always_ok
+
+      code.is_a?(Integer) ? code : status
     end
 
     # Normalize errors into a plain Hash regardless of source type.

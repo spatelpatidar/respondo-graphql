@@ -97,6 +97,8 @@ Same names and signatures as the `respondo` JSON gem.
 | 2xx no payload | `render_no_content` `render_reset_content` | `message:` `meta:` `pagination:` |
 | 4xx / 5xx | `render_bad_request` `render_unauthorized` `render_forbidden` `render_not_found` `render_conflict` `render_unprocessable` `render_too_many_requests` `render_server_error` `render_service_unavailable` … (40 in total) | `message:` `errors:` `meta:` |
 
+**204 and 205 have no body.** HTTP forbids a body on `204 No Content` and `205 Reset Content`, and Rails drops it, so `render_no_content` and `render_reset_content` reach the client with an empty body. Use `render_ok` when the client needs the message, or set `config.always_ok = true` (every response becomes HTTP 200, body included).
+
 1xx (informational) and 3xx (redirect) helpers are deliberately left out: they are transport-level and have no meaning in a GraphQL response. The full list is in `RespondoGraphql::ControllerHelpers::SUCCESS_HELPERS` and `ERROR_HELPERS`.
 
 ## Configuration
