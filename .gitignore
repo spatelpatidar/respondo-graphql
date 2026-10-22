@@ -3,3 +3,4 @@
 /pkg/
 *.gem
 /spec/examples.txt
+/WORKFLOW.md
