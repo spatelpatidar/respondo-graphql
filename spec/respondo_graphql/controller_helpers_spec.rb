@@ -41,7 +41,7 @@ RSpec.describe RespondoGraphql::ControllerHelpers do
           expect(body.keys).to eq(%i[data extensions])
           expect(body[:extensions][:code]).to   eq(spec[:code])
           expect(body[:extensions][:status]).to eq(spec[:status])
-          expect(status).to                     eq(spec[:status])
+          expect(status).to                     eq(spec[:code])
         end
 
         it "uses the right default message" do
@@ -98,7 +98,7 @@ RSpec.describe RespondoGraphql::ControllerHelpers do
           controller.public_send(:"render_#{name}")
           expect(body.keys).to eq(%i[errors data extensions])
           expect(body[:data]).to be_nil
-          expect(status).to eq(spec[:status])
+          expect(status).to eq(spec[:code])
         end
 
         it "puts the default message and codes in the summary error" do
@@ -121,6 +121,33 @@ RSpec.describe RespondoGraphql::ControllerHelpers do
       controller.render_unprocessable(message: "Validation failed", errors: { email: ["is invalid", "is taken"] })
       expect(body[:errors].size).to eq(3)
       expect(body[:errors][1][:extensions][:field]).to eq("email")
+    end
+  end
+
+  # =========================================================================
+  # HTTP status sent to Rails
+  # =========================================================================
+
+  describe "HTTP status" do
+    it "sends the numeric code, immune to Rack renaming its status symbols" do
+      controller.render_payload_too_large
+      expect(status).to eq(413)
+      expect(body[:extensions][:status]).to eq(:payload_too_large)
+    end
+
+    it "sends the numeric code for success helpers too" do
+      controller.render_created
+      expect(status).to eq(201)
+    end
+
+    it "falls back to the status symbol when a direct render_error call has no numeric code" do
+      controller.send(:render_error, message: "x", code: "AUTH_EXPIRED", status: :unauthorized)
+      expect(status).to eq(:unauthorized)
+    end
+
+    it "falls back to the default :unprocessable_content when nothing is given" do
+      controller.send(:render_error, message: "x")
+      expect(status).to eq(:unprocessable_content)
     end
   end
 
