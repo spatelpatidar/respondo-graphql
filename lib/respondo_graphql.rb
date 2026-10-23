@@ -5,6 +5,7 @@ require_relative "respondo_graphql/configuration"
 require_relative "respondo_graphql/serializer"
 require_relative "respondo_graphql/response_builder"
 require_relative "respondo_graphql/controller_helpers"
+require_relative "respondo_graphql/short_helpers"
 
 # RespondoGraphql — consistent GraphQL-spec responses for Rails controllers.
 #
@@ -15,15 +16,23 @@ require_relative "respondo_graphql/controller_helpers"
 #     config.always_ok     = true   # HTTP 200 for every response
 #   end
 #
-# @example Use in a controller
+# @example Use in a controller (helpers are always render_graphql_*)
 #   class GraphqlController < ApplicationController
 #     def show
-#       render_ok(data: { user: User.find(params[:id]) }, message: "User fetched")
+#       render_graphql_ok(data: { user: User.find(params[:id]) }, message: "User fetched")
 #     end
 #   end
 #
-# @example Include manually (outside Rails, or next to the respondo JSON gem)
-#   class GraphqlController < ApplicationController
+# @example Without the respondo (JSON) gem: both names work, no include needed
+#   render_ok(data: user)            # GraphQL
+#   render_graphql_ok(data: user)    # GraphQL (same thing)
+#
+# @example Next to the respondo (JSON) gem: use the prefix for GraphQL
+#   render_ok(data: user)            # JSON    (respondo)
+#   render_graphql_ok(data: user)    # GraphQL (respondo-graphql)
+#
+# @example Include manually (outside Rails)
+#   class GraphqlController
 #     include RespondoGraphql::ControllerHelpers
 #   end
 module RespondoGraphql
@@ -43,11 +52,11 @@ module RespondoGraphql
       @config = Configuration.new
     end
 
-    # Whether the Railtie should include the helpers into the base controllers.
-    # False when the user turned it off, or when the respondo (JSON) gem is
-    # loaded too (both define the same helper names).
-    def auto_include?
-      config.auto_include && !defined?(::Respondo::ControllerHelpers) ? true : false
+    # True when the respondo (JSON) gem is loaded. Its helpers use the same short
+    # names (render_ok, ...), so only then are the short names left out and
+    # render_graphql_* is the way to call this gem.
+    def json_gem_loaded?
+      defined?(::Respondo::ControllerHelpers) ? true : false
     end
   end
 end

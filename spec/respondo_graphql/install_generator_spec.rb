@@ -111,9 +111,10 @@ RSpec.describe RespondoGraphql::Generators::InstallGenerator do
       expect(content).to include('config.default_meta = { api_version: "v2" }')
     end
 
-    it "writes the data key and a commented auto_include hint" do
+    it "writes the data key and the ShortHelpers hint" do
       expect(content).to include("config.data_key = :result")
-      expect(content).to include("# config.auto_include = false")
+      expect(content).to include("include RespondoGraphql::ShortHelpers")
+      expect(content).not_to include("auto_include")
     end
 
     it "produces valid Ruby that configures RespondoGraphql" do

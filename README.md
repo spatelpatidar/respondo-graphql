@@ -15,7 +15,7 @@
 
 `respondo-graphql` is the GraphQL sibling of [`respondo`](https://github.com/spatelpatidar/respondo) (JSON). It is a **standalone gem**: it has no dependency on `respondo`, its own namespace (`RespondoGraphql`), its own config, and its own generator. Install either one, or both.
 
-It gives your controllers one expressive helper per situation (`render_ok`, `render_not_found`, `render_unprocessable`, …) and always answers in the GraphQL response shape: `data`, `errors`, `extensions`.
+It gives your controllers one expressive helper per situation (`render_graphql_ok`, `render_graphql_not_found`, `render_graphql_unprocessable`, …) and always answers in the GraphQL response shape: `data`, `errors`, `extensions`.
 
 ## Install
 
@@ -29,7 +29,7 @@ bundle install
 rails generate respondo_graphql:install
 ```
 
-The Railtie includes the helpers into `ActionController::Base` and `ActionController::API` for you. (If the `respondo` JSON gem is installed too, see [Using both gems](#using-both-gems).)
+The Railtie includes the helpers into `ActionController::Base` and `ActionController::API` for you, so no `include` is needed: `render_graphql_ok`, `render_graphql_not_found`, … always, and the short `render_ok`, `render_not_found`, … too when the `respondo` JSON gem is **not** installed. (If it is installed, see [Using both gems](#using-both-gems).)
 
 ## Usage
 
@@ -37,23 +37,23 @@ The Railtie includes the helpers into `ActionController::Base` and `ActionContro
 class GraphqlController < ApplicationController
   def show
     user = User.find_by(id: params[:id])
-    return render_not_found(message: "User not found") unless user
+    return render_graphql_not_found(message: "User not found") unless user
 
-    render_ok(data: { user: user }, message: "User fetched")
+    render_graphql_ok(data: { user: user }, message: "User fetched")
   end
 
   def create
     user = User.new(user_params)
     if user.save
-      render_created(data: { user: user }, message: "Account created")
+      render_graphql_created(data: { user: user }, message: "Account created")
     else
-      render_unprocessable(message: "Validation failed", errors: user.errors)
+      render_graphql_unprocessable(message: "Validation failed", errors: user.errors)
     end
   end
 end
 ```
 
-**Success** — `render_ok(data: { user: { id: 1 } }, message: "User fetched")`
+**Success** — `render_graphql_ok(data: { user: { id: 1 } }, message: "User fetched")`
 
 ```json
 {
@@ -89,15 +89,15 @@ GraphQL requires `data` to be a map, so an Array or scalar payload is wrapped as
 
 ## Helpers
 
-Same names and signatures as the `respondo` JSON gem.
+Same helpers, signatures and statuses as the `respondo` JSON gem, with a `graphql_` infix: `render_ok` (JSON) becomes `render_graphql_ok` (GraphQL). Nothing is shared between the two gems, so using both in one project is safe (see [Using both gems](#using-both-gems)).
 
 | Group | Helpers | Arguments |
 |---|---|---|
-| 2xx with payload | `render_ok` `render_created` `render_accepted` `render_non_authoritative` `render_partial_content` `render_multi_status` `render_already_reported` `render_im_used` | `data:` `message:` `meta:` `pagination:` |
-| 2xx no payload | `render_no_content` `render_reset_content` | `message:` `meta:` `pagination:` |
-| 4xx / 5xx | `render_bad_request` `render_unauthorized` `render_forbidden` `render_not_found` `render_conflict` `render_unprocessable` `render_too_many_requests` `render_server_error` `render_service_unavailable` … (40 in total) | `message:` `errors:` `meta:` |
+| 2xx with payload | `render_graphql_ok` `render_graphql_created` `render_graphql_accepted` `render_graphql_non_authoritative` `render_graphql_partial_content` `render_graphql_multi_status` `render_graphql_already_reported` `render_graphql_im_used` | `data:` `message:` `meta:` `pagination:` |
+| 2xx no payload | `render_graphql_no_content` `render_graphql_reset_content` | `message:` `meta:` `pagination:` |
+| 4xx / 5xx | `render_graphql_bad_request` `render_graphql_unauthorized` `render_graphql_forbidden` `render_graphql_not_found` `render_graphql_conflict` `render_graphql_unprocessable` `render_graphql_too_many_requests` `render_graphql_server_error` `render_graphql_service_unavailable` … (40 in total) | `message:` `errors:` `meta:` |
 
-**204 and 205 have no body.** HTTP forbids a body on `204 No Content` and `205 Reset Content`, and Rails drops it, so `render_no_content` and `render_reset_content` reach the client with an empty body. Use `render_ok` when the client needs the message, or set `config.always_ok = true` (every response becomes HTTP 200, body included).
+**204 and 205 have no body.** HTTP forbids a body on `204 No Content` and `205 Reset Content`, and Rails drops it, so `render_graphql_no_content` and `render_graphql_reset_content` reach the client with an empty body. Use `render_graphql_ok` when the client needs the message, or set `config.always_ok = true` (every response becomes HTTP 200, body included).
 
 1xx (informational) and 3xx (redirect) helpers are deliberately left out: they are transport-level and have no meaning in a GraphQL response. The full list is in `RespondoGraphql::ControllerHelpers::SUCCESS_HELPERS` and `ERROR_HELPERS`.
 
@@ -114,23 +114,56 @@ RespondoGraphql.configure do |config|
   config.data_key                = :result # wrapper for Array / scalar data
   config.default_meta            = { api_version: "v1" }
   config.serializer              = ->(obj) { MySerializer.new(obj).as_json }
-  config.auto_include            = true    # see "Using both gems"
 end
 ```
 
-**`always_ok`** — many GraphQL clients, Apollo among them, treat non-2xx responses as network failures. Set `config.always_ok = true` to send every response with HTTP 200 and let the `errors` array carry the failure. The default (`false`) keeps each helper's own status (404 for `render_not_found`, …).
+**`always_ok`** — many GraphQL clients, Apollo among them, treat non-2xx responses as network failures. Set `config.always_ok = true` to send every response with HTTP 200 and let the `errors` array carry the failure. The default (`false`) keeps each helper's own status (404 for `render_graphql_not_found`, …).
 
 ## Using both gems
 
-`respondo` and `respondo-graphql` define the same helper names (`render_ok`, …), so they must not both be auto-included into every controller — whichever loaded last would silently win. When the Railtie sees that `respondo` is loaded, it **skips auto-include**. Keep `respondo` for your REST controllers and include the GraphQL helpers where you want them:
+`respondo` (JSON) and `respondo-graphql` can live in the same project. With `respondo` installed, the Railtie of each gem includes its own helpers into every controller and the `render_graphql_*` names never overlap with `respondo`'s, so there is nothing to configure:
 
 ```ruby
+class ReportsController < ApplicationController
+  def show
+    render_ok(data: @report)            # JSON    — respondo
+  end
+end
+
 class GraphqlController < ApplicationController
-  include RespondoGraphql::ControllerHelpers   # wins over respondo's helpers in this controller
+  def execute
+    render_graphql_ok(data: @result)    # GraphQL — respondo-graphql
+  end
 end
 ```
 
-You can also turn auto-include off yourself with `config.auto_include = false`.
+`render_ok` is always JSON and `render_graphql_ok` is always GraphQL, in whichever controller you are, because every method this gem defines (public and private) carries the `render_graphql_` prefix. Each gem keeps its own configuration: `Respondo.configure` does not affect GraphQL responses, and `RespondoGraphql.configure` does not affect JSON ones.
+
+### Which name do I use?
+
+| Your project | `render_graphql_ok` | `render_ok` |
+|---|---|---|
+| only `respondo-graphql` | works, GraphQL | works, GraphQL (the short names are included for you) |
+| `respondo-graphql` **and** `respondo` | works, GraphQL | respondo's JSON, so use the `render_graphql_*` names for GraphQL |
+
+The gem checks whether `respondo` is loaded when Rails boots. There is no setting for it. The prefixed names work in both cases, so code written with them never changes meaning.
+
+To get `render_ok` as GraphQL in one controller of a project that also has `respondo`, include the short names there on purpose:
+
+```ruby
+class GraphqlController < ApplicationController
+  include RespondoGraphql::ShortHelpers   # explicit, per controller
+
+  def execute
+    render_ok(data: @result)              # = render_graphql_ok
+  end
+end
+```
+
+- It is never included automatically next to `respondo`, so it cannot change what `render_ok` means in a controller you did not choose.
+- If the `respondo` JSON helpers are visible in that controller, a warning is printed when the class loads, so the switch is never silent. Use `render_graphql_*` in any controller that also needs JSON.
+- Include it **after** the controller already has the JSON helpers (the normal Rails case: `ApplicationController` inherits them from `ActionController::API`). If you include `ShortHelpers` in a class and *then* include `Respondo::ControllerHelpers` in that same class, the JSON helpers come first and `render_ok` is JSON again.
+- It includes `ControllerHelpers` for you, and the `render_graphql_*` names keep working.
 
 ## When to use this vs. graphql-ruby
 

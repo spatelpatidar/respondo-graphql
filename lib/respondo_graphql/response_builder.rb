@@ -93,7 +93,7 @@ module RespondoGraphql
       extensions
     end
 
-    # A String `code:` passed to render_error is already machine-readable and
+    # A String `code:` passed to render_graphql_error is already machine-readable and
     # is used as-is; otherwise the status symbol is used, e.g. :not_found
     # becomes "NOT_FOUND". Falls back to "ERROR" when neither is available.
     def error_code
