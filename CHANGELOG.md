@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.2.0] — Prefixed helpers, short names only without respondo (breaking vs. 0.1.0)
+
+### Changed (breaking)
+- **Every helper is now `render_graphql_*`** (`render_ok` -> `render_graphql_ok`,
+  `render_not_found` -> `render_graphql_not_found`, … all 50). In 0.1.0 the names were
+  identical to the `respondo` (JSON) gem's, so a project using both could get the
+  wrong format depending on where a module was included. With the prefix,
+  `render_ok` is always JSON and `render_graphql_ok` is always GraphQL.
+- Private methods are prefixed too (`render_graphql_success`, `render_graphql_error`,
+  `extract_graphql_errors`), because `respondo` defines private `render_success`,
+  `render_error` and `extract_errors` that would otherwise collide.
+- The Railtie always includes the `render_graphql_*` helpers into `ActionController::Base` /
+  `::API`. The short names (`render_ok`, …) are included as well when the `respondo` (JSON)
+  gem is **not** loaded; with `respondo` present they are left to respondo (JSON).
+
+### Removed (breaking)
+- `config.auto_include` and `RespondoGraphql.auto_include?`. The option existed only to
+  avoid the name collision, and it was easy to misread. Delete any
+  `config.auto_include = ...` line from your initializer (the generator only ever wrote
+  it as a comment).
+
+### Added
+- `RespondoGraphql::ShortHelpers`: the short names (`render_ok`, `render_not_found`, … all
+  50), each delegating to its `render_graphql_*` twin. Included for you when `respondo`
+  is not installed; with `respondo` installed, include it explicitly in the controllers
+  where you want `render_ok` to be GraphQL (it warns when `respondo`'s JSON helpers are
+  also visible there).
+- `RespondoGraphql.json_gem_loaded?`.
+
+### Migrating from 0.1.0
+- Without `respondo`: nothing to do, `render_ok` and `render_graphql_ok` both work.
+- With `respondo`: rename `render_` to `render_graphql_` in your GraphQL controllers (or
+  `include RespondoGraphql::ShortHelpers` in them to keep the short names there).
+
+Arguments and output are unchanged. Do not put `ShortHelpers` in a controller that also
+needs `render_ok` to be JSON.
+
 ## [0.1.0] — Initial release
 
 First release of `respondo-graphql`, the GraphQL sibling of the `respondo` JSON

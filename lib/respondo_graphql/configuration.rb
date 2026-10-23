@@ -42,13 +42,6 @@ module RespondoGraphql
     # Defaults to false so helper status codes keep meaning what they say.
     attr_accessor :always_ok
 
-    # When true (default) the Railtie includes the helpers into
-    # ActionController::Base / ::API, so no `include` is needed. It is skipped
-    # automatically when the respondo (JSON) gem is also loaded, because both
-    # gems define the same helper names — include RespondoGraphql::ControllerHelpers
-    # in your GraphQL controller instead.
-    attr_accessor :auto_include
-
     def initialize
       @default_success_message = "Success"
       @default_error_message   = "An error occurred"
@@ -58,7 +51,6 @@ module RespondoGraphql
       @default_meta            = {}
       @data_key                = :result
       @always_ok               = false
-      @auto_include            = true
     end
   end
 end

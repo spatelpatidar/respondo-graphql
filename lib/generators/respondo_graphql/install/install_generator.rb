@@ -69,7 +69,7 @@ module RespondoGraphql
         out section("HTTP status")
         out line("  Many GraphQL clients (e.g. Apollo) treat non-2xx responses as network")
         out line("  errors. Answer y to always send HTTP 200 and report failures in `errors`.")
-        out line("  Answer n to keep each helper's status (404 for render_not_found, ...).")
+        out line("  Answer n to keep each helper's status (404 for render_graphql_not_found, ...).")
         out blank
         @cfg[:always_ok] = confirm("  Always send HTTP 200? (y/n) ")
       end
@@ -146,10 +146,12 @@ module RespondoGraphql
         lines << "  # Custom serializer — receives the payload, returns a Hash/Array."
         lines << "  # config.serializer = ->(obj) { MySerializer.new(obj).as_json }"
         lines << ""
-        lines << "  # Helpers are included into your controllers automatically. This is skipped"
-        lines << "  # when the respondo (JSON) gem is also installed — include"
-        lines << "  # RespondoGraphql::ControllerHelpers in your GraphQL controller instead."
-        lines << "  # config.auto_include = false"
+        lines << "  # render_graphql_ok, render_graphql_not_found, ... work in every controller"
+        lines << "  # with no include. Without the respondo (JSON) gem, render_ok, render_not_found, ..."
+        lines << "  # work too. With respondo installed its render_ok stays JSON; to get the short"
+        lines << "  # names as GraphQL in one controller, add"
+        lines << "  #   include RespondoGraphql::ShortHelpers"
+        lines << "  # to that controller."
         lines << "end"
         lines << ""
         lines.join("\n")
@@ -166,7 +168,7 @@ module RespondoGraphql
         out blank
         out line("  Next steps:")
         out line("    1. Review   config/initializers/respondo_graphql.rb")
-        out line("    2. Use      render_ok / render_not_found / render_unprocessable ... in your controllers")
+        out line("    2. Use      render_graphql_ok / render_graphql_not_found / ... in your controllers")
         out line("    3. Re-run   rails generate respondo_graphql:install  to regenerate")
         out blank
         out divider

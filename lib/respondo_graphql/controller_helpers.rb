@@ -4,31 +4,36 @@ module RespondoGraphql
   # Mixed into Rails controllers to render GraphQL-spec responses with
   # expressive, status-aware helpers.
   #
+  # Every public and private method here is prefixed (render_graphql_*, ...) so
+  # this module can sit in the same controller as the respondo (JSON) gem's
+  # helpers: render_ok is always JSON, render_graphql_ok is always GraphQL, and
+  # neither depends on include order.
+  #
   # Success helpers (2xx) — accept data:, message:, meta:, pagination:
-  #   render_ok, render_created, render_accepted, render_non_authoritative,
-  #   render_partial_content, render_multi_status, render_already_reported,
-  #   render_im_used
+  #   render_graphql_ok, render_graphql_created, render_graphql_accepted, render_graphql_non_authoritative,
+  #   render_graphql_partial_content, render_graphql_multi_status, render_graphql_already_reported,
+  #   render_graphql_im_used
   #
   # Success helpers (2xx) without a payload — accept message:, meta:, pagination:
-  #   render_no_content, render_reset_content
+  #   render_graphql_no_content, render_graphql_reset_content
   #
   # Error helpers (4xx / 5xx) — accept message:, errors:, meta:
-  #   render_bad_request, render_unauthorized, render_payment_required,
-  #   render_forbidden, render_not_found, render_method_not_allowed,
-  #   render_not_acceptable, render_proxy_auth_required, render_request_timeout,
-  #   render_conflict, render_gone, render_length_required,
-  #   render_precondition_failed, render_payload_too_large, render_uri_too_long,
-  #   render_unsupported_media_type, render_range_not_satisfiable,
-  #   render_expectation_failed, render_im_a_teapot, render_misdirected_request,
-  #   render_unprocessable, render_locked, render_failed_dependency,
-  #   render_too_early, render_upgrade_required, render_precondition_required,
-  #   render_too_many_requests, render_request_header_fields_too_large,
-  #   render_unavailable_for_legal_reasons, render_server_error,
-  #   render_not_implemented, render_bad_gateway, render_service_unavailable,
-  #   render_gateway_timeout, render_http_version_not_supported,
-  #   render_variant_also_negotiates, render_insufficient_storage,
-  #   render_loop_detected, render_not_extended,
-  #   render_network_authentication_required
+  #   render_graphql_bad_request, render_graphql_unauthorized, render_graphql_payment_required,
+  #   render_graphql_forbidden, render_graphql_not_found, render_graphql_method_not_allowed,
+  #   render_graphql_not_acceptable, render_graphql_proxy_auth_required, render_graphql_request_timeout,
+  #   render_graphql_conflict, render_graphql_gone, render_graphql_length_required,
+  #   render_graphql_precondition_failed, render_graphql_payload_too_large, render_graphql_uri_too_long,
+  #   render_graphql_unsupported_media_type, render_graphql_range_not_satisfiable,
+  #   render_graphql_expectation_failed, render_graphql_im_a_teapot, render_graphql_misdirected_request,
+  #   render_graphql_unprocessable, render_graphql_locked, render_graphql_failed_dependency,
+  #   render_graphql_too_early, render_graphql_upgrade_required, render_graphql_precondition_required,
+  #   render_graphql_too_many_requests, render_graphql_request_header_fields_too_large,
+  #   render_graphql_unavailable_for_legal_reasons, render_graphql_server_error,
+  #   render_graphql_not_implemented, render_graphql_bad_gateway, render_graphql_service_unavailable,
+  #   render_graphql_gateway_timeout, render_graphql_http_version_not_supported,
+  #   render_graphql_variant_also_negotiates, render_graphql_insufficient_storage,
+  #   render_graphql_loop_detected, render_graphql_not_extended,
+  #   render_graphql_network_authentication_required
   #
   # 1xx (informational) and 3xx (redirect) helpers are intentionally not
   # provided: they are transport-level and have no meaning in a GraphQL response.
@@ -95,15 +100,15 @@ module RespondoGraphql
       default_message = spec[:message]
 
       if spec[:data]
-        # e.g. render_ok(data: @user, message: "User fetched", meta: {}, pagination: nil)
-        define_method(:"render_#{name}") do |data: nil, message: default_message, meta: {}, pagination: nil|
-          render_success(data: data, message: message, meta: meta, pagination: pagination,
+        # e.g. render_graphql_ok(data: @user, message: "User fetched", meta: {}, pagination: nil)
+        define_method(:"render_graphql_#{name}") do |data: nil, message: default_message, meta: {}, pagination: nil|
+          render_graphql_success(data: data, message: message, meta: meta, pagination: pagination,
                          code: spec[:code], status: spec[:status])
         end
       else
-        # e.g. render_no_content(message: "Deleted", meta: {}, pagination: nil)
-        define_method(:"render_#{name}") do |message: default_message, meta: {}, pagination: nil|
-          render_success(data: nil, message: message, meta: meta, pagination: pagination,
+        # e.g. render_graphql_no_content(message: "Deleted", meta: {}, pagination: nil)
+        define_method(:"render_graphql_#{name}") do |message: default_message, meta: {}, pagination: nil|
+          render_graphql_success(data: nil, message: message, meta: meta, pagination: pagination,
                          code: spec[:code], status: spec[:status])
         end
       end
@@ -112,9 +117,9 @@ module RespondoGraphql
     ERROR_HELPERS.each do |name, spec|
       default_message = spec[:message]
 
-      # e.g. render_not_found(message: "User not found", errors: nil, meta: {})
-      define_method(:"render_#{name}") do |message: default_message, errors: nil, meta: {}|
-        render_error(message: message, errors: errors, meta: meta, code: spec[:code], status: spec[:status])
+      # e.g. render_graphql_not_found(message: "User not found", errors: nil, meta: {})
+      define_method(:"render_graphql_#{name}") do |message: default_message, errors: nil, meta: {}|
+        render_graphql_error(message: message, errors: errors, meta: meta, code: spec[:code], status: spec[:status])
       end
     end
 
@@ -132,7 +137,7 @@ module RespondoGraphql
     # @param pagination [Hash, nil]       pagination hash built by the caller
     # @param code       [Integer, nil]    numeric HTTP code recorded in extensions
     # @param status     [Symbol, Integer] HTTP status (default: :ok / 200)
-    def render_success(data: nil, message: nil, meta: {}, code: nil, pagination: nil, status: :ok)
+    def render_graphql_success(data: nil, message: nil, meta: {}, code: nil, pagination: nil, status: :ok)
       merged_meta = code ? meta.merge(code: code, status: status) : meta
 
       payload = ResponseBuilder.new(
@@ -154,7 +159,7 @@ module RespondoGraphql
     # @param code    [Integer, String, nil]        HTTP code (Integer) or machine-readable code (String)
     # @param meta    [Hash]                        extra fields merged into extensions
     # @param status  [Symbol, Integer]             HTTP status (default: :unprocessable_content / 422)
-    def render_error(message: nil, errors: nil, code: nil, meta: {}, status: :unprocessable_content)
+    def render_graphql_error(message: nil, errors: nil, code: nil, meta: {}, status: :unprocessable_content)
       merged_meta = code ? meta.merge(code: code, status: status) : meta
 
       payload = ResponseBuilder.new(
@@ -162,7 +167,7 @@ module RespondoGraphql
         data:    nil,
         message: message,
         meta:    merged_meta,
-        errors:  extract_errors(errors),
+        errors:  extract_graphql_errors(errors),
         request: try(:request)
       ).build
 
@@ -175,7 +180,7 @@ module RespondoGraphql
     #     renamed several status symbols between versions (:payload_too_large,
     #     :unprocessable_entity, ...), so a number is the one form that works on
     #     every Rack/Rails version.
-    #   * without a numeric code (a direct render_error call) the symbol is used.
+    #   * without a numeric code (a direct render_graphql_error call) the symbol is used.
     def respondo_graphql_http_status(code, status)
       return :ok if RespondoGraphql.config.always_ok
 
@@ -183,7 +188,7 @@ module RespondoGraphql
     end
 
     # Normalize errors into a plain Hash regardless of source type.
-    def extract_errors(errors)
+    def extract_graphql_errors(errors)
       return nil if errors.nil?
       return errors.to_hash if defined?(ActiveModel::Errors) && errors.is_a?(ActiveModel::Errors)
       return errors if errors.is_a?(Hash)

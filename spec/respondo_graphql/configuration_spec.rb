@@ -13,7 +13,7 @@ RSpec.describe RespondoGraphql::Configuration do
     expect(config.default_meta).to            eq({})
     expect(config.data_key).to                eq(:result)
     expect(config.always_ok).to               eq(false)
-    expect(config.auto_include).to            eq(true)
+    expect(config).not_to respond_to(:auto_include)
   end
 
   it "is mutable" do
@@ -34,25 +34,21 @@ RSpec.describe RespondoGraphql::Configuration do
     expect(RespondoGraphql.config.default_success_message).to eq("Success")
   end
 
+  describe "RespondoGraphql.json_gem_loaded?" do
+    it "is false when the respondo (JSON) gem is not loaded" do
+      hide_const("Respondo") if defined?(::Respondo)
+      expect(RespondoGraphql.json_gem_loaded?).to eq(false)
+    end
+
+    it "is true when Respondo::ControllerHelpers is defined" do
+      stub_const("Respondo::ControllerHelpers", Module.new)
+      expect(RespondoGraphql.json_gem_loaded?).to eq(true)
+    end
+  end
+
   it "accepts a custom serializer callable" do
     serializer = ->(obj) { { custom: obj } }
     RespondoGraphql.configure { |c| c.serializer = serializer }
     expect(RespondoGraphql.config.serializer).to eq(serializer)
-  end
-
-  describe "RespondoGraphql.auto_include?" do
-    it "is true by default" do
-      expect(RespondoGraphql.auto_include?).to eq(true)
-    end
-
-    it "is false when config.auto_include is false" do
-      RespondoGraphql.configure { |c| c.auto_include = false }
-      expect(RespondoGraphql.auto_include?).to eq(false)
-    end
-
-    it "is false when the respondo (JSON) gem is loaded, to avoid helper-name clashes" do
-      stub_const("Respondo::ControllerHelpers", Module.new)
-      expect(RespondoGraphql.auto_include?).to eq(false)
-    end
   end
 end
