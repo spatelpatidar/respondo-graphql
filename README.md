@@ -4,6 +4,7 @@
 
 **Consistent GraphQL-spec responses for Rails controllers — in one line.**
 
+[![CI Suite](https://github.com/spatelpatidar/respondo-graphql/actions/workflows/ci.yml/badge.svg)](https://github.com/spatelpatidar/respondo-graphql/actions/workflows/ci.yml)
 [![Gem Version](https://badge.fury.io/rb/respondo-graphql.svg)](https://rubygems.org/gems/respondo-graphql)
 [![Downloads](https://img.shields.io/gem/dt/respondo-graphql.svg)](https://rubygems.org/gems/respondo-graphql)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache2.0-green.svg)](LICENSE)
