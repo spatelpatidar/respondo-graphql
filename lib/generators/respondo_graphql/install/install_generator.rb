@@ -12,8 +12,30 @@ module RespondoGraphql
     class InstallGenerator < Rails::Generators::Base
       desc "Interactive setup — creates config/initializers/respondo_graphql.rb with your preferences."
 
+      # ASCII logo — the RESPONDO line is identical to the one in the respondo
+      # (JSON) gem so both gems look like one family; GRAPHQL marks this edition.
+      LOGO_WIDTH = 68
+
+      RESPONDO_ART = <<~'ART'
+        ██████╗ ███████╗███████╗██████╗  ██████╗ ███╗   ██╗██████╗  ██████╗
+        ██╔══██╗██╔════╝██╔════╝██╔══██╗██╔═══██╗████╗  ██║██╔══██╗██╔═══██╗
+        ██████╔╝█████╗  ███████╗██████╔╝██║   ██║██╔██╗ ██║██║  ██║██║   ██║
+        ██╔══██╗██╔══╝  ╚════██║██╔═══╝ ██║   ██║██║╚██╗██║██║  ██║██║   ██║
+        ██║  ██║███████╗███████║██║     ╚██████╔╝██║ ╚████║██████╔╝╚██████╔╝
+        ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝      ╚═════╝ ╚═╝  ╚═══╝╚═════╝  ╚═════╝
+      ART
+
+      GRAPHQL_ART = <<~'ART'
+         ██████╗ ██████╗  █████╗ ██████╗ ██╗  ██╗ ██████╗ ██╗
+        ██╔════╝ ██╔══██╗██╔══██╗██╔══██╗██║  ██║██╔═══██╗██║
+        ██║  ███╗██████╔╝███████║██████╔╝███████║██║   ██║██║
+        ██║   ██║██╔══██╗██╔══██║██╔═══╝ ██╔══██║██║▄▄ ██║██║
+        ╚██████╔╝██║  ██║██║  ██║██║     ██║  ██║╚██████╔╝███████╗
+         ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝ ╚══▀▀═╝ ╚══════╝
+      ART
+
       def run_interactive_setup
-        out banner
+        out logo
         out blank
 
         unless confirm("  Ready to configure RespondoGraphql? (y/n) ")
@@ -41,6 +63,25 @@ module RespondoGraphql
       # =========================================================================
       # Steps
       # =========================================================================
+
+      # Centers a multi-line block as ONE unit (every row gets the same left
+      # padding), so the letters stay aligned with each other.
+      def center_block(art)
+        rows  = art.lines.map(&:rstrip)
+        width = rows.map(&:length).max
+        pad   = " " * [(LOGO_WIDTH - width) / 2, 0].max
+        rows.map { |r| "#{pad}#{r}\n" }.join
+      end
+
+      def logo
+        indent   = "  "
+        respondo = RESPONDO_ART.lines.map { |l| "#{indent}#{l.rstrip}\n" }.join
+        graphql  = center_block(GRAPHQL_ART).lines.map { |l| "#{indent}#{l}" }.join
+        tagline  = "GraphQL-spec Response Formatter for Rails".center(LOGO_WIDTH).rstrip
+        version  = "─── v#{RespondoGraphql::VERSION} ───".center(LOGO_WIDTH).rstrip
+
+        "\n#{green(respondo)}#{magenta(graphql)}\n#{indent}#{tagline}\n#{indent}#{version}\n\n"
+      end
 
       def step_api_version
         out section("API version")
@@ -169,7 +210,8 @@ module RespondoGraphql
         out line("  Next steps:")
         out line("    1. Review   config/initializers/respondo_graphql.rb")
         out line("    2. Use      render_graphql_ok / render_graphql_not_found / ... in your controllers")
-        out line("    3. Re-run   rails generate respondo_graphql:install  to regenerate")
+        out line("    3. Use      Short Helper without Respondo Gem render_ok / render_not_found / render_unprocessable ... in your controllers")
+        out line("    4. Re-run   rails generate respondo_graphql:install  to regenerate")
         out blank
         out divider
         out blank
@@ -201,10 +243,6 @@ module RespondoGraphql
         "\n  #{cyan("┌─ #{title} #{dashes}┐")}\n\n"
       end
 
-      def banner
-        green("\n  RespondoGraphql — GraphQL-spec responses for Rails  (v#{RespondoGraphql::VERSION})\n")
-      end
-
       def prompt_default(default)
         $stdout.print "  #{cyan("›")} #{yellow("[#{default}]")}: "
         $stdout.flush
@@ -221,6 +259,7 @@ module RespondoGraphql
       def cyan(text)   = "\e[36m#{text}\e[0m"
       def green(text)  = "\e[32m#{text}\e[0m"
       def yellow(text) = "\e[33m#{text}\e[0m"
+      def magenta(text) = "\e[35m#{text}\e[0m"
     end
   end
 end
