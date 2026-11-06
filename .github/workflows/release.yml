@@ -190,7 +190,7 @@ jobs:
       - name: Check if this version is already in GitHub Packages
         id: check
         run: |
-          gem_version="$(ruby -r ./lib/respondo-graphql/version -e 'puts Gem::Version.new(RespondoGraphql::VERSION).to_s')"
+          gem_version="$(ruby -e "s = Gem::Specification.load('respondo-graphql.gemspec') or abort('cannot load gemspec'); puts s.version.to_s")"
           echo "gem_version=${gem_version}" >> "$GITHUB_OUTPUT"
 
           # Package not created yet -> API returns 404 -> empty list -> publish
